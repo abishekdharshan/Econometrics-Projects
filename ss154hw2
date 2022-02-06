@@ -1,0 +1,166 @@
+/* 1st Question */
+
+/* Assigning a value of 1 to each individual from 1 - 15 */
+egen P = anymatch(personid), values (1 2 3 4 5 6 7 8 9 10 11 12 13 14 15)
+/* drop everyone except the first 15 people */
+keep if P
+drop P
+
+gen P = 0 
+/* assigning '1' to every first observation */
+bysort personid (personid): replace P= 1 if _n == 1
+/* dropping everything except the 1st observation */
+keep if P == 1
+drop P
+
+/* Making lists for x1 and x2 */
+global x1 educ potexper ability
+global x2 mothered fathered siblings
+global y logwage
+
+/* Part a */
+/* regressing y on x1 */
+regress $y $x1
+/* reference for part c to manually calculate r-squared */
+ereturn list
+scalar rss1 = e(rss)
+scalar tss1 = e(rss) + e(mss)
+scalar r2_1 = 1-(rss1/tss1)
+display r2_1
+
+/* reference for adjusted r-squared */
+scalar no_obs1 = e(N)
+scalar no_var1 = e(df_m)
+scalar adjr2_1 = 1-(1-r2_1)*(no_obs1-1)/(no_obs1-(no_var1+1))
+display adjr2_1
+
+/* Part b */
+/* regressing y on x1 and x2 */
+regress $y $x1 $x2
+/* reference for part c to manually calculate r-squared */
+ereturn list
+scalar rss3 = e(rss)
+scalar tss3 = e(rss) + e(mss)
+scalar r2_3 = 1-(rss3/tss3)
+display r2_3
+
+/* reference for adjusted r-squared */
+scalar no_obs2 = e(N)
+scalar no_var2 = e(df_m)
+scalar adjr2_2 = 1-(1-r2_2)*(no_obs2-1)/(no_obs2-(no_var2+1))
+display adjr2_2
+
+/* Part c and d */
+regress $y $x1, noconstant
+/* reference to manually calculate r-squared */
+ereturn list
+scalar rss2 = e(rss)
+scalar tss2 = e(rss) + e(mss)
+scalar r2_2 = 1-(rss2/tss2)
+display r2_2
+
+/* reference for adjusted r-squared */
+scalar no_obs2 = e(N)
+scalar no_var2 = e(df_m)
+scalar adjr2_2 = 1-(1-r2_2)*(no_obs2-1)/(no_obs2-(no_var2+1))
+display adjr2_2
+
+regress $y $x1 $x2, noconstant
+/* reference to manually calculate r-squared */
+ereturn list
+scalar rss4 = e(rss)
+scalar tss4 = e(rss) + e(mss)
+scalar r2_4 = 1-(rss4/tss4)
+display r2_4
+
+/* reference for adjusted r-squared */
+scalar no_obs2 = e(N)
+scalar no_var2 = e(df_m)
+scalar adjr2_2 = 1-(1-r2_2)*(no_obs2-1)/(no_obs2-(no_var2+1))
+display adjr2_2
+
+/* Part e */
+/* MR5 */
+/* vif */
+vif
+/* correlation matrices */
+corr $y $x1
+corr $y $x1 $x2
+
+/* MR6 */
+regress $y $x1
+predict r, resid
+hist r, freq normal
+
+regress $y $x1 $x2
+predict r2, resid
+hist r2, freq normal
+
+
+/* 2nd Question */
+/* Obtaining the per capita quantity variable */
+gen quantity_pc = gasexp/(gasp*pop)
+
+/* Part a */
+regress quantity_pc income puc ps ppt pnc pn pd gasp year
+
+/* Part b */
+/* Hypothesis Test */
+regress gasexp pnc puc
+/* Testing if pnc = puc */
+test pnc = puc
+
+/* Part c */
+/* Determining elasticity values */
+/* own price elasticity of demand */
+margins if year==2004, eyex(gasp)
+/* income elasticity */
+margins if year==2004, eyex(income)
+/* cross-price elasticity with respect to changes in the price of public transportation */
+margins if year==2004, eyex(ppt)
+
+/* Part d */
+/* Generating the logarithmic regressions */
+gen lngy = log(quantity_pc)
+gen lnincome = log(income)
+gen lngasp = log(gasp)
+gen lnpnc = log(pnc)
+gen lnpuc = log(puc)
+gen lnppt = log(ppt)
+gen lnpd = log(pd)
+gen lnpn = log(pn)
+gen lnps = log(ps)
+/* regressing them */
+reg lngy lnincome lngasp lnpnc lnpuc lnppt lnpd lnpn lnps year
+/* checking for elasticity using margins */
+margins, dydx(lngasp lnppt lnincome) at(year = 2004)
+
+/* Part e */
+/* Correlation matrices for both logarithmic and non-logarithmic */
+correlate income gasp pnc puc ppt pd pn ps year
+correlate lnincome lngasp lnpnc lnpuc lnppt lnpd lnpn lnps year
+
+/* Part f */
+/* Normalizing for 2004 */
+gen nmgasp = gasp * 100/gasp[52]
+gen nmpnc = pnc * 100/pnc[52]
+gen nmpuc = puc * 100/puc[52]
+gen nmppt = ppt * 100/ppt[52]
+gen nmpd = pd * 100/pd[52]
+gen nmpn = pn * 100/pn[52]
+gen nmps = ps * 100/ps[52]
+
+regress quantity_pc nmgasp nmpnc nmpuc nmppt nmpd nmpn nmps income year
+
+/* Repeating the above for logarithms */
+gen lnnmgasp = ln(nmgasp)
+gen lnnmpnc = ln(nmpnc)
+gen lnnmpuc = ln(nmpuc)
+gen lnnmppt = ln(nmppt)
+gen lnnmpd = ln(nmpd)
+gen lnnmpn = ln(nmpn)
+gen lnnmps = ln(nmps)
+gen lnincome = ln(income)
+gen lnquantity_pc = ln(quantity_pc)
+
+regress lnquantity_pc lnnmgasp lnnmpnc lnnmpuc lnnmppt lnnmpd lnnmpn lnnmps lnincome year
