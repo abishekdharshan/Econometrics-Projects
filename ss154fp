@@ -1,0 +1,50 @@
+insheet using "/Users/Abishekd/Downloads/samhda.csv"
+
+// appendix: adol = ages 12-17, young = ages 18-25, all = all ages above 12
+
+// dummy variable for marijuana legalization
+gen weed = 1 if year >= 2014
+replace weed = 0 if weed ==. & year !=.
+
+// states
+gen state = 0 if geo=="Washington"
+replace state = 1 if geo=="SouthDakota"
+
+// summary tables generation
+
+summarize mjadol mjyoung mjall if (geo=="Washington" & weed ==0)
+summarize mjadol mjyoung mjall if (geo=="SouthDakota" & weed ==0)
+summarize mjadol mjyoung mjall if (geo=="Washington" & weed ==1)
+summarize mjadol mjyoung mjall if (geo=="SouthDakota" & weed ==1)
+summarize riskadol riskyoung riskall if (geo=="Washington" & weed ==0)
+summarize riskadol riskyoung riskall if (geo=="SouthDakota" & weed ==0)
+summarize riskadol riskyoung riskall if (geo=="Washington" & weed ==1)
+summarize riskadol riskyoung riskall if (geo=="SouthDakota" & weed ==1)
+
+// T test
+
+ ttest mjadol if legal==0, by (state)
+ ttest mjyoung if legal==0, by (state)
+ ttest mjall if legal==0, by (state)
+ 
+ ttest mjadol if legal==1, by (state)
+ ttest mjyoung if legal==1, by (state)
+ ttest mjall if legal==1, by (state)
+ 
+// Washington State
+
+gen wa = 1 if geo == "Washington"
+replace wa = 0 if co ==.
+gen d = 1 if wa == 1 & legal == 1
+replace d= 0 if d ==.
+drop if state ==.
+ 
+// Difference in Difference Regression
+
+reg mjadol wa$$weed
+reg mjyoung wa$$weed
+reg mjall wa$$weed
+
+reg riskadol wa$$weed
+reg riskyoung wa$$weed
+reg riskall wa$$weed
