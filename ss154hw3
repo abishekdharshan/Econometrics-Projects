@@ -1,0 +1,49 @@
+// Question 1
+// Part a
+
+// Importing dataset as a CSV format
+import delimited /Users/abishekd/Downloads/TableF17-2.csv
+
+gen A = 0
+replace A = 1 if yrb > 0
+
+// indicator variable for children
+gen indv4=1 if v4 > 0
+replace indv4 = 0 if v4 == 0
+
+// creating age-squared variable
+gen vsq = v2^2
+
+// Creating the logit model
+logit A i.v1 v2 vsq indv4 v3 i.v5 v6
+margins, dydx(*) atmeans
+
+// Creating the probit model
+probit A i.v1 v2 vsq indv4 v3 i.v5 v6
+margins, dydx(*) atmeans
+
+// Finding Marginal Probabilities
+margins, dydx(*) atmeans predict(outcome(1))
+margins, dydx(*) atmeans predict(outcome(2))
+margins, dydx(*) atmeans predict(outcome(3))
+margins, dydx(*) atmeans predict(outcome(4))
+
+
+// Question 2
+// Part a
+
+import delimited /Users/abishekd/Downloads/health.csv, clear
+
+// Poisson Model
+poisson hospvis female age handper public hhninc
+
+// Finding Marginal Effects
+margins, dydx(*) atmeans
+
+// Part b
+
+// OLS Regression
+reg hospvis female age handper public hhninc
+
+// Checking for Overdispersion using negative binomial regression
+nbreg hospvis female age handper public hhninc
